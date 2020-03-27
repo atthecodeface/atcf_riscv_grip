@@ -1,19 +1,19 @@
 name = "atcf_riscv_grip"
 default_config  = "notools"
-configs         = ["all", "notools"]
+configs         = ["withtools", "notools"]
 base_repos      = ["atcf_riscv_tests", "grip"]
 stages          = ["download", "configure", "compile", "install"]
 workflow        = "readonly"
 
 [env]
+TOOLS_DIR="%GRIP_ROOT_PATH%/tools"
 RISCV_TOOLS_PREFIX="%TOOLS_DIR%/bin/riscv32-elf-"
 PATH="%GRIP_ROOT_PATH%/grip:$(PATH)"
 
 [config.notools]
 
-[config.all]
+[config.withtools]
 repos = ["toolchains"]
-env={TOOLS_DIR="%GRIP_ROOT_PATH%/tools"}
 
 [repo.grip]
 url  = "https://github.com/atthecodeface/grip.git"
