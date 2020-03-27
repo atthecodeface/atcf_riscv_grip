@@ -2,18 +2,18 @@ name = "atcf_riscv_grip"
 default_config  = "notools"
 configs         = ["all", "notools"]
 base_repos      = ["atcf_riscv_tests", "grip"]
-stages          = ["compile", "configure","install"]
+stages          = ["download", "configure", "compile", "install"]
 workflow        = "readonly"
 
 [env]
-HOST_TOOLS_DIR="%GRIP_ROOT_PATH%/tools/host"
-RISCV_TOOLS_DIR="%GRIP_ROOT_PATH%/tools/riscv"
+RISCV_TOOLS_PREFIX="%TOOLS_DIR%/bin/riscv32-elf-"
 PATH="%GRIP_ROOT_PATH%/grip:$(PATH)"
 
 [config.notools]
 
 [config.all]
-repos = ["grip", "cdl", "binutils"]
+repos = ["toolchains"]
+env={TOOLS_DIR="%GRIP_ROOT_PATH%/tools"}
 
 [repo.grip]
 url  = "https://github.com/atthecodeface/grip.git"
@@ -22,29 +22,29 @@ path = "grip"
 [repo.atcf_riscv_tests]
 url  = "https://github.com/atthecodeface/riscv-atcf-tests.git"
 path = "atcf_riscv_tests"
-[repo.cdl.compile]
-exec = ""
 
-[repo.binutils]
-url = "%SOURCEWARE_ORG%/binutils-gdb.git"
-branch = "binutils-2_32-branch"
-path = "binutils"
-shallow = "true"
-env = { BINUTILS_BUILD_DIR="%GRIP_ROOT_PATH%/build/binutils" }
+[repo.atcf_riscv_tests.configure]
+env = {}
+exec = "make RISCV_TOOLS_PREFIX=%RISCV_TOOLS_PREFIX% clean"
 
-[repo.binutils.configure]
-env = {BUILD_DIR="%BINUTILS_BUILD_DIR%"}
-exec = """ \
-mkdir -p %BUILD_DIR% &&  \
-cd %BUILD_DIR% &&        \
-%GRIP_REPO_PATH%/configure --prefix=%RISCV_TOOLS_DIR% --target=riscv64-unknown-elf \
-"""
+[repo.atcf_riscv_tests.compile]
+env = {}
+requires = ["atcf_riscv_tests.configure"]
+exec = "make RISCV_TOOLS_PREFIX=%RISCV_TOOLS_PREFIX%"
 
-[repo.binutils.install]
-requires = ["binutils.configure"]
-wd = "%BINUTILS_BUILD_DIR%"
-exec = """ \
- make -j8 &&   \
- make install  \
-  """
+[repo.toolchains]
+url = "toolchain_building.git"
+path = "toolchains"
+env = { TOOLS_DATA_DIR="%GRIP_ROOT_PATH%/temp_data" }
+
+[repo.toolchains.download]
+exec = "make DATA_DIR=%TOOLS_DATA_DIR% INSTALL_DIR=%TOOLS_DIR% download"
+
+[repo.toolchains.configure]
+requires = ["toolchains.download"]
+exec = "make TARGET=riscv32-elf DATA_DIR=%TOOLS_DATA_DIR% INSTALL_DIR=%TOOLS_DIR% configure"
+
+[repo.toolchains.install]
+requires = ["toolchains.configure"]
+exec = "make TARGET=riscv32-elf DATA_DIR=%TOOLS_DATA_DIR% INSTALL_DIR=%TOOLS_DIR% install"
 
